@@ -1,0 +1,1 @@
+What is the minimum viable temporal resolution and symbolic granularity for facial Action Unit sequences to preserve predictive information about cognitive friction events in hybrid learning environments?

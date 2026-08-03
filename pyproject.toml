@@ -1,0 +1,15 @@
+[project]
+name = "scientific-reasoning-os"
+version = "0.1.0"
+description = "Agentic research-support system (AffectSense)"
+requires-python = ">=3.11"
+dependencies = [
+  "google-cloud-firestore",
+  "google-genai",
+  "pydantic",
+  "python-dotenv",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
