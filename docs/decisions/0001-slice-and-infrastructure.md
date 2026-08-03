@@ -17,3 +17,7 @@
    gemini-2.5-flash (env-configurable). Structured output validated by Pydantic;
    one repair retry; failed runs recorded in agent_runs, never persisted as
    domain objects.
+
+6. Repository visibility set to Private (3 Aug 2026), consistent with the
+   dual-layer IP posture (secreto industrial for core engine and prompts).
+   XPRIZE judges to be granted collaborator access at submission time.
