@@ -127,3 +127,109 @@ def question_critique_created(
             "recommended_next_event": recommended_next_event,
         },
     )
+
+
+def question_revision_requested(
+    *,
+    project_id: str,
+    question_id: str,
+    version_id: str,
+    reasons: list[str],
+    prompts: list[str],
+    correlation_id: str,
+    causation_id: str,
+) -> Event:
+    return Event(
+        event_type="question_revision_requested",
+        producer="A-02",
+        actor_type="agent",
+        actor_id="A-02",
+        project_id=project_id,
+        object_type="research_question",
+        object_id=question_id,
+        correlation_id=correlation_id,
+        causation_id=causation_id,
+        payload={"version_id": version_id, "reasons": reasons, "prompts": prompts},
+    )
+
+
+def question_ready_for_validation(
+    *,
+    project_id: str,
+    question_id: str,
+    version_id: str,
+    assessments: list[dict],
+    unresolved_items: list[str],
+    correlation_id: str,
+    causation_id: str,
+) -> Event:
+    return Event(
+        event_type="question_ready_for_validation",
+        producer="A-02",
+        actor_type="agent",
+        actor_id="A-02",
+        project_id=project_id,
+        object_type="research_question",
+        object_id=question_id,
+        correlation_id=correlation_id,
+        causation_id=causation_id,
+        payload={
+            "version_id": version_id,
+            "assessments": assessments,
+            "unresolved_items": unresolved_items,
+            "requires_human_notice": True,
+        },
+    )
+
+
+def question_revision_submitted(
+    *,
+    project_id: str,
+    question_id: str,
+    parent_version_id: str,
+    new_version_id: str,
+    text: str,
+    change_note: str | None,
+    researcher_id: str,
+    correlation_id: str,
+) -> Event:
+    return Event(
+        event_type="question_revision_submitted",
+        producer="cli",
+        actor_type="researcher",
+        actor_id=researcher_id,
+        project_id=project_id,
+        object_type="research_question",
+        object_id=question_id,
+        correlation_id=correlation_id,
+        payload={
+            "parent_version_id": parent_version_id,
+            "new_version_id": new_version_id,
+            "text": text,
+            "change_note": change_note,
+        },
+    )
+
+
+def question_validated(
+    *,
+    project_id: str,
+    question_id: str,
+    version_id: str,
+    decision_note: str,
+    researcher_id: str,
+    correlation_id: str,
+    causation_id: str | None = None,
+) -> Event:
+    return Event(
+        event_type="question_validated",
+        producer="cli",
+        actor_type="researcher",
+        actor_id=researcher_id,
+        project_id=project_id,
+        object_type="research_question",
+        object_id=question_id,
+        correlation_id=correlation_id,
+        causation_id=causation_id,
+        payload={"version_id": version_id, "decision_note": decision_note},
+    )

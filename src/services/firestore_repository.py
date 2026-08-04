@@ -86,3 +86,52 @@ class FirestoreRepository:
         self.db.collection("agent_runs").document(run_id).set(record)
         log.info("agent_run %s status=%s", run_id, record.get("status"))
         return run_id
+
+    # -- reads and version lifecycle (Milestone 2) ---------------------------
+
+    def get_question(self, question_id: str) -> dict[str, Any] | None:
+        snap = self.db.collection("research_questions").document(question_id).get()
+        return snap.to_dict() if snap.exists else None
+
+    def get_version(self, question_id: str, version_id: str) -> dict[str, Any] | None:
+        snap = (
+            self.db.collection("research_questions")
+            .document(question_id)
+            .collection("versions")
+            .document(version_id)
+            .get()
+        )
+        return snap.to_dict() if snap.exists else None
+
+    def list_versions(self, question_id: str) -> list[tuple[str, dict[str, Any]]]:
+        col = (
+            self.db.collection("research_questions")
+            .document(question_id)
+            .collection("versions")
+            .order_by("created_at")
+        )
+        return [(d.id, d.to_dict()) for d in col.stream()]
+
+    def add_version(
+        self, question_id: str, version_id: str, version: ResearchQuestionVersion
+    ) -> str:
+        q_ref = self.db.collection("research_questions").document(question_id)
+        q_ref.collection("versions").document(version_id).set(version.model_dump())
+        q_ref.update(
+            {
+                "current_version_id": version_id,
+                "status": "draft",
+                "updated_at": datetime.now(timezone.utc),
+            }
+        )
+        log.info("added version %s to research_questions/%s (now current)", version_id, question_id)
+        return version_id
+
+    def set_question_fields(self, question_id: str, **fields: Any) -> None:
+        fields["updated_at"] = datetime.now(timezone.utc)
+        self.db.collection("research_questions").document(question_id).update(fields)
+        log.info("updated research_questions/%s: %s", question_id, list(fields.keys()))
+
+    def get_agent_run(self, run_id: str) -> dict[str, Any] | None:
+        snap = self.db.collection("agent_runs").document(run_id).get()
+        return snap.to_dict() if snap.exists else None

@@ -21,3 +21,15 @@
 6. Repository visibility set to Private (3 Aug 2026), consistent with the
    dual-layer IP posture (secreto industrial for core engine and prompts).
    XPRIZE judges to be granted collaborator access at submission time.
+
+7. Language strategy: system is language-parametric per submission (language
+   field per RQ version); internals and schemas remain English. Beta defaults
+   to "es" for the Mexican market; XPRIZE materials in English. No code change
+   required for future markets beyond changing a default.
+8. Prompt v3 (stage-aware severity): A-02 judges formulation-stage quality
+   only; operationalisation demands route to operationalisation_notes and the
+   ready_for_validation payload for the future design stage. Verified by A/B
+   on identical question text under prompt_version v2 vs v3 (agent_runs).
+9. HITL escalation backlog (Milestone 5): after N consecutive
+   question_revision_requested on one question, emit human_review_requested
+   and offer paid human assessment (existing premium mentoring product).

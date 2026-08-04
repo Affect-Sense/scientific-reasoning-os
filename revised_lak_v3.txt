@@ -1,0 +1,1 @@
+What is the minimum temporal sampling rate and Action Unit feature set, extracted with OpenFace from webcam video, required to detect attention lapses — operationalized as human-coded off-task episodes of ≥15 seconds — with no more than a 5-point drop in ROC-AUC relative to the full-resolution representation, among university students in synchronous online courses?

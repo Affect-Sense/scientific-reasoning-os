@@ -99,7 +99,11 @@ class A02CritiqueOutput(BaseModel):
     findings: list[CritiqueFinding] = Field(min_length=4, max_length=4, description="Exactly one finding per criterion: clarity, relevance, feasibility, falsifiability.")
     assumptions_exposed: list[str]
     missing_information: list[MissingInformation]
-    revision_prompts: list[str] = Field(description="Concrete prompts the researcher can act on to produce the next version.")
+    revision_prompts: list[str] = Field(description="Concrete prompts the researcher can act on to produce the next version. Only for RQ-formulation-stage defects, never for operationalisation detail.")
+    operationalisation_notes: list[str] = Field(
+        default_factory=list,
+        description="Methodological decisions the RESEARCH DESIGN stage will need to resolve (instruments, thresholds, measurement procedures, statistical criteria, sampling). These are forward guidance for a later module, NOT defects of the research question, and must never be reasons to request revision.",
+    )
     uncertainty: str = Field(description="What the agent cannot assess from the text alone and why.")
     recommended_next_event: Literal[
         "question_revision_requested",

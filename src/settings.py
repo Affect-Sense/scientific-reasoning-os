@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -17,6 +17,9 @@ class Settings:
     gcp_location: str = os.environ.get("GCP_LOCATION", "us-central1")
     gemini_model: str = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
     firestore_database: str = os.environ.get("FIRESTORE_DATABASE", "(default)")
+    # Vertex list price USD per 1M tokens (debt cleared: config, not code)
+    gemini_price_in_per_m: float = float(os.environ.get("GEMINI_PRICE_IN_PER_M", "0.30"))
+    gemini_price_out_per_m: float = float(os.environ.get("GEMINI_PRICE_OUT_PER_M", "2.50"))
     prompt_dir: Path = REPO_ROOT / "config" / "prompts"
     log_dir: Path = REPO_ROOT / "logs"
 
