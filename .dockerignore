@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.env
+logs/
+docs/
+tests/
+*.zip
+*.txt.bak

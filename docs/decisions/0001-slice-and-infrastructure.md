@@ -33,3 +33,9 @@
 9. HITL escalation backlog (Milestone 5): after N consecutive
    question_revision_requested on one question, emit human_review_requested
    and offer paid human assessment (existing premium mentoring product).
+
+10. Canonical health endpoint is GET /health. /healthz is intercepted by the
+    Google Frontend on Cloud Run and returns 404 before reaching the
+    application (verified: route present in OpenAPI, /healthz/ reached the app
+    as 307, /healthz never appeared in app logs). Monitoring, load balancers
+    and clients must use /health.
