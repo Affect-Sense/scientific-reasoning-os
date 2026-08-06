@@ -60,7 +60,7 @@ class ValidateRequest(BaseModel):
     decision_note: str = Field(min_length=5)
 
 
-@app.get("/health")
+@app.get("/healthz")
 def healthz() -> dict:
     return {"status": "ok", "service": "sros-api", "version": "0.3.0"}
 
@@ -124,3 +124,117 @@ def show_question(question_id: str) -> dict:
         return lifecycle.show(question_id=question_id)
     except SystemExit as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+
+# ---------------------------------------------------------------------------
+# UI half-slice (Milestone 5 front half) — server-rendered, Spanish-first.
+# Access: ?k=<API_KEY> query token for pilot links. Per-user tokens: M4.
+# ---------------------------------------------------------------------------
+from pathlib import Path
+
+from fastapi import Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+
+templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+
+STATUS_ES = {
+    "draft": "borrador",
+    "awaiting_revision": "esperando revisión",
+    "ready_for_validation": "lista para validar",
+    "validated": "validada",
+}
+CRIT_ES = {
+    "clarity": "Claridad",
+    "relevance": "Relevancia",
+    "feasibility": "Factibilidad",
+    "falsifiability": "Falsabilidad",
+}
+
+
+def require_ui_key(k: str = "") -> str:
+    expected = os.environ.get("API_KEY", "")
+    if not expected:
+        raise HTTPException(status_code=503, detail="Service not configured (API_KEY unset).")
+    if not secrets.compare_digest(k, expected):
+        raise HTTPException(status_code=401, detail="Enlace inválido. Solicita un enlace de acceso.")
+    return k
+
+
+@app.get("/ui", response_class=HTMLResponse)
+def ui_index(request: Request, k: str = ""):
+    require_ui_key(k)
+    return templates.TemplateResponse(request, "index.html", {"k": k})
+
+
+@app.post("/ui/questions")
+def ui_submit(k: str = "", text: str = Form(...), language: str = Form(...)):
+    require_ui_key(k)
+    from src.application import rq_lifecycle as lifecycle
+    from src.services.firestore_repository import FirestoreRepository
+    from src.settings import settings
+
+    repo = FirestoreRepository(settings.gcp_project_id, settings.firestore_database)
+    repo.ensure_project(
+        "proj_lak2027", owner_id="genaro",
+        title="LAK 2027 — Behavioural representation of learner state", language=language,
+    )
+    result = lifecycle.submit(
+        text=text.strip(), language=language, researcher_id="pilot",
+        project_id="proj_lak2027", change_note=None,
+    )
+    return RedirectResponse(url=f"/ui/questions/{result['question_id']}?k={k}", status_code=303)
+
+
+@app.get("/ui/questions/{question_id}", response_class=HTMLResponse)
+def ui_question(request: Request, question_id: str, k: str = ""):
+    require_ui_key(k)
+    from src.application import rq_lifecycle as lifecycle
+
+    try:
+        q = lifecycle.show(question_id=question_id)
+    except SystemExit as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    current_text = ""
+    for v in q["versions"]:
+        if v["version_id"] == q["current_version_id"]:
+            current_text = v["text"]
+    return templates.TemplateResponse(
+        request,
+        "question.html",
+        {
+            "k": k, "q": q, "c": q.get("latest_critique"),
+            "current_text": current_text,
+            "status_es": STATUS_ES.get(q["status"], q["status"]),
+            "crit_es": CRIT_ES,
+        },
+    )
+
+
+@app.post("/ui/questions/{question_id}/revise")
+def ui_revise(question_id: str, k: str = "", text: str = Form(...), change_note: str = Form(...)):
+    require_ui_key(k)
+    from src.application import rq_lifecycle as lifecycle
+
+    try:
+        lifecycle.revise(
+            question_id=question_id, text=text.strip(),
+            researcher_id="pilot", change_note=change_note.strip(),
+        )
+    except SystemExit as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    return RedirectResponse(url=f"/ui/questions/{question_id}?k={k}", status_code=303)
+
+
+@app.post("/ui/questions/{question_id}/validate")
+def ui_validate(question_id: str, k: str = "", decision_note: str = Form(...)):
+    require_ui_key(k)
+    from src.application import rq_lifecycle as lifecycle
+
+    try:
+        lifecycle.validate(
+            question_id=question_id, researcher_id="pilot", decision_note=decision_note.strip(),
+        )
+    except SystemExit as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    return RedirectResponse(url=f"/ui/questions/{question_id}?k={k}", status_code=303)

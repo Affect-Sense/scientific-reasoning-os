@@ -8,8 +8,8 @@ from src.api.app import app
 client = TestClient(app)
 
 
-def test_health_open():
-    r = client.get("/health")
+def test_healthz_open():
+    r = client.get("/healthz")
     assert r.status_code == 200 and r.json()["status"] == "ok"
 
 
@@ -35,3 +35,15 @@ def test_validation_rejects_short_text(monkeypatch):
         "/questions", headers={"X-API-Key": "k"}, json={"text": "short", "language": "en"}
     )
     assert r.status_code == 422
+
+
+def test_ui_requires_key(monkeypatch):
+    monkeypatch.setenv("API_KEY", "k")
+    assert client.get("/ui").status_code == 401
+    assert client.get("/ui?k=wrong").status_code == 401
+
+
+def test_ui_index_renders(monkeypatch):
+    monkeypatch.setenv("API_KEY", "k")
+    r = client.get("/ui?k=k")
+    assert r.status_code == 200 and "pregunta de investigación" in r.text.lower()

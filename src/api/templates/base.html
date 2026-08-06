@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Scientific Reasoning OS{% endblock %}</title>
+  <style>
+    :root { --ink:#1a1a2e; --accent:#0f4c81; --ok:#2e7d32; --warn:#b26a00; --bad:#b3261e; --paper:#fafafa; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink);
+           background: var(--paper); margin: 0; padding: 1.5rem; line-height: 1.55; }
+    main { max-width: 760px; margin: 0 auto; }
+    h1 { font-size: 1.35rem; } h2 { font-size: 1.05rem; margin-top: 1.8rem; }
+    .brand { color: var(--accent); font-weight: 700; letter-spacing: .02em; }
+    .beta { font-size:.7rem; background:var(--accent); color:#fff; border-radius:4px; padding:2px 6px; vertical-align:middle; }
+    textarea, input[type=text] { width: 100%; padding: .6rem; border: 1px solid #c8c8d0;
+                                 border-radius: 6px; font: inherit; }
+    textarea { min-height: 7rem; }
+    button { background: var(--accent); color: #fff; border: 0; border-radius: 6px;
+             padding: .6rem 1.2rem; font: inherit; cursor: pointer; margin-top: .6rem; }
+    button.secondary { background: #555; }
+    .card { background: #fff; border: 1px solid #e3e3ea; border-radius: 8px;
+            padding: 1rem 1.2rem; margin: .8rem 0; }
+    .sev { font-size:.72rem; font-weight:700; border-radius:4px; padding:2px 8px; color:#fff; }
+    .sev-ok { background: var(--ok); } .sev-minor { background: var(--warn); }
+    .sev-major, .sev-blocking { background: var(--bad); }
+    .status { font-weight: 700; }
+    .status-validated { color: var(--ok); } .status-awaiting_revision { color: var(--warn); }
+    .status-ready_for_validation { color: var(--accent); }
+    .muted { color: #666; font-size: .88rem; }
+    .lineage { border-left: 3px solid var(--accent); padding-left: .9rem; margin: .5rem 0; }
+    ul { padding-left: 1.2rem; }
+    .notice { background:#fff8e6; border:1px solid #e8d59a; border-radius:6px; padding:.6rem .9rem; font-size:.9rem; }
+  </style>
+</head>
+<body>
+<main>
+  <p><span class="brand">Scientific Reasoning OS</span> <span class="beta">BETA</span><br>
+  <span class="muted">AffectSense — El agente critica; la persona investigadora decide.</span></p>
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

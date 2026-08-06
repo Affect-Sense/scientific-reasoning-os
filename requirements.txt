@@ -3,4 +3,6 @@ google-genai
 pydantic
 python-dotenv
 fastapi
+jinja2
+python-multipart
 uvicorn[standard]

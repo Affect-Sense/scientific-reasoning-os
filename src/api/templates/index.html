@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Nueva pregunta — Scientific Reasoning OS{% endblock %}
+{% block content %}
+<h1>Envía tu pregunta de investigación</h1>
+<p class="muted">El Agente de Pregunta Científica (A-02) evaluará claridad, relevancia,
+factibilidad y falsabilidad en la etapa de formulación. No inventa literatura ni
+decide por ti.</p>
+<form method="post" action="/ui/questions?k={{ k }}">
+  <label for="text"><strong>Pregunta de investigación</strong></label>
+  <textarea id="text" name="text" required minlength="10"
+    placeholder="Escribe aquí tu pregunta de investigación (borrador está bien)"></textarea>
+  <p><strong>Idioma de la crítica</strong><br>
+    <label><input type="radio" name="language" value="es" checked> Español</label>
+    &nbsp;&nbsp;<label><input type="radio" name="language" value="en"> English</label>
+  </p>
+  <button type="submit">Enviar para crítica</button>
+  <p class="muted">La crítica tarda entre 10 y 30 segundos. No cierres la página.</p>
+</form>
+{% endblock %}

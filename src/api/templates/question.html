@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ q.question_id }} — Scientific Reasoning OS{% endblock %}
+{% block content %}
+<h1>Pregunta {{ q.question_id }}</h1>
+<p>Estado: <span class="status status-{{ q.status }}">{{ status_es }}</span>
+   &nbsp;·&nbsp; Tipo de indagación: {{ q.inquiry_type }}
+   {% if q.locked_by %}&nbsp;·&nbsp; Validada por: {{ q.locked_by }}{% endif %}</p>
+
+<h2>Historial de versiones</h2>
+{% for v in q.versions %}
+<div class="lineage">
+  <p><strong>{{ v.version_id }}</strong>
+     {% if v.version_id == q.current_version_id %}<span class="muted">(actual)</span>{% endif %}<br>
+     {{ v.text }}<br>
+     <span class="muted">Autor: {{ v.author }}{% if v.change_note %} — “{{ v.change_note }}”{% endif %}</span></p>
+</div>
+{% endfor %}
+
+{% if c %}
+<h2>Última crítica de A-02</h2>
+<div class="card">
+  {% for f in c.findings %}
+  <p><span class="sev sev-{{ f.severity }}">{{ f.severity }}</span>
+     <strong>{{ crit_es.get(f.criterion, f.criterion) }}</strong><br>{{ f.assessment }}</p>
+  {% endfor %}
+
+  {% if c.assumptions_exposed %}<p><strong>Supuestos implícitos</strong></p>
+  <ul>{% for a in c.assumptions_exposed %}<li>{{ a }}</li>{% endfor %}</ul>{% endif %}
+
+  {% if c.missing_information %}<p><strong>Información faltante (etapa de formulación)</strong></p>
+  <ul>{% for m in c.missing_information %}<li>{{ m.item }} — <span class="muted">{{ m.why_needed }}</span></li>{% endfor %}</ul>{% endif %}
+
+  {% if c.revision_prompts %}<p><strong>Sugerencias de revisión</strong></p>
+  <ul>{% for p in c.revision_prompts %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+
+  {% if c.operationalisation_notes %}<p><strong>Notas para la etapa de diseño (no bloquean la validación)</strong></p>
+  <ul>{% for n in c.operationalisation_notes %}<li>{{ n }}</li>{% endfor %}</ul>{% endif %}
+
+  <p><strong>Incertidumbre declarada</strong><br><span class="muted">{{ c.uncertainty }}</span></p>
+</div>
+{% endif %}
+
+{% if q.status == "validated" %}
+<p class="notice">Esta pregunta está <strong>validada y bloqueada</strong>. Desbloquearla será un acto
+deliberado en una versión futura del sistema.</p>
+{% else %}
+<h2>Enviar una revisión</h2>
+<form method="post" action="/ui/questions/{{ q.question_id }}/revise?k={{ k }}">
+  <textarea name="text" required minlength="10" placeholder="Nueva versión de tu pregunta">{{ current_text }}</textarea>
+  <input type="text" name="change_note" required minlength="5"
+         placeholder="Nota de cambio: qué cambiaste y por qué (procedencia científica)">
+  <button type="submit">Enviar revisión para crítica</button>
+</form>
+
+<h2>Validar y bloquear</h2>
+{% if q.status == "awaiting_revision" %}
+<p class="notice">A-02 recomendó revisar. Puedes validar de todas formas: la decisión es tuya
+y quedará registrada.</p>
+{% endif %}
+<form method="post" action="/ui/questions/{{ q.question_id }}/validate?k={{ k }}">
+  <input type="text" name="decision_note" required minlength="5"
+         placeholder="Nota de decisión (por qué la validas)">
+  <button type="submit" class="secondary">Validar como persona investigadora</button>
+</form>
+{% endif %}
+
+<p class="muted"><a href="/ui?k={{ k }}">← Nueva pregunta</a></p>
+{% endblock %}
