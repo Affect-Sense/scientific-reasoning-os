@@ -51,3 +51,8 @@
     severities (all ok/minor but revision recommended). Fix: derive the
     recommendation deterministically from severities in code; model field
     becomes advisory. Scheduled next session.
+
+14. Object Model v0.2 proposal (pilot-driven, 7 Aug): agent_runs should carry
+    an explicit actor/customer attribution field; today ownership resolves
+    only via project_id -> customers, two hops. Surfaced during the first
+    pilot compliance audit (Gustavo, 3 runs, PASS).
