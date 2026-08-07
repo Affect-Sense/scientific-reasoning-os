@@ -5,4 +5,5 @@ python-dotenv
 fastapi
 jinja2
 python-multipart
+stripe
 uvicorn[standard]

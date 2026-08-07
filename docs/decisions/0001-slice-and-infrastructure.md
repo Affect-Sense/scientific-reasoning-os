@@ -39,3 +39,15 @@
     application (verified: route present in OpenAPI, /healthz/ reached the app
     as 307, /healthz never appeared in app logs). Monitoring, load balancers
     and clients must use /health.
+
+11. payment_confirmed and customer_onboarded are catalogue extensions mandated
+    by the delivery brief; proposed for Event Catalogue v0.2. Stripe webhook
+    is signature-verified, fail-closed, and idempotent (session replay never
+    double-onboards).
+12. Beta commercial terms: "Scientific Reasoning OS — Beta", MX$490 one-time,
+    promo code SROSBETA (100%) for invited pilots. Comped checkouts fire the
+    identical event chain, so onboarding evidence is uniform.
+13. Watch item: A-02 recommended_next_event observed inconsistent with its own
+    severities (all ok/minor but revision recommended). Fix: derive the
+    recommendation deterministically from severities in code; model field
+    becomes advisory. Scheduled next session.

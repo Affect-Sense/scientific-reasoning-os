@@ -152,43 +152,62 @@ CRIT_ES = {
 }
 
 
-def require_ui_key(k: str = "") -> str:
+def resolve_actor(k: str = "") -> tuple[str, str]:
+    """Returns (researcher_id, project_id) for a UI access token.
+
+    Admin: the shared API_KEY → founder identity, LAK project.
+    Pilot/customer: per-user token minted at payment_confirmed → own project.
+    Fail closed when unconfigured; 401 otherwise.
+    """
     expected = os.environ.get("API_KEY", "")
     if not expected:
         raise HTTPException(status_code=503, detail="Service not configured (API_KEY unset).")
-    if not secrets.compare_digest(k, expected):
-        raise HTTPException(status_code=401, detail="Enlace inválido. Solicita un enlace de acceso.")
-    return k
+    if k and secrets.compare_digest(k, expected):
+        return "genaro", "proj_lak2027"
+    if k:
+        try:
+            from src.services.firestore_repository import FirestoreRepository
+            from src.settings import settings
+
+            repo = FirestoreRepository(settings.gcp_project_id, settings.firestore_database)
+            found = repo.get_customer_by_token(k)
+        except Exception:
+            log.exception("customer token lookup failed; failing closed")
+            found = None
+        if found:
+            customer_id, _rec = found
+            return customer_id, f"proj_{customer_id}"
+    raise HTTPException(status_code=401, detail="Enlace inválido. Solicita un enlace de acceso.")
 
 
 @app.get("/ui", response_class=HTMLResponse)
 def ui_index(request: Request, k: str = ""):
-    require_ui_key(k)
+    resolve_actor(k)
     return templates.TemplateResponse(request, "index.html", {"k": k})
 
 
 @app.post("/ui/questions")
 def ui_submit(k: str = "", text: str = Form(...), language: str = Form(...)):
-    require_ui_key(k)
+    researcher_id, project_id = resolve_actor(k)
     from src.application import rq_lifecycle as lifecycle
     from src.services.firestore_repository import FirestoreRepository
     from src.settings import settings
 
     repo = FirestoreRepository(settings.gcp_project_id, settings.firestore_database)
     repo.ensure_project(
-        "proj_lak2027", owner_id="genaro",
-        title="LAK 2027 — Behavioural representation of learner state", language=language,
+        project_id, owner_id=researcher_id,
+        title=f"Proyecto de investigación — {researcher_id}", language=language,
     )
     result = lifecycle.submit(
-        text=text.strip(), language=language, researcher_id="pilot",
-        project_id="proj_lak2027", change_note=None,
+        text=text.strip(), language=language, researcher_id=researcher_id,
+        project_id=project_id, change_note=None,
     )
     return RedirectResponse(url=f"/ui/questions/{result['question_id']}?k={k}", status_code=303)
 
 
 @app.get("/ui/questions/{question_id}", response_class=HTMLResponse)
 def ui_question(request: Request, question_id: str, k: str = ""):
-    require_ui_key(k)
+    resolve_actor(k)
     from src.application import rq_lifecycle as lifecycle
 
     try:
@@ -213,13 +232,13 @@ def ui_question(request: Request, question_id: str, k: str = ""):
 
 @app.post("/ui/questions/{question_id}/revise")
 def ui_revise(question_id: str, k: str = "", text: str = Form(...), change_note: str = Form(...)):
-    require_ui_key(k)
+    researcher_id, _ = resolve_actor(k)
     from src.application import rq_lifecycle as lifecycle
 
     try:
         lifecycle.revise(
             question_id=question_id, text=text.strip(),
-            researcher_id="pilot", change_note=change_note.strip(),
+            researcher_id=researcher_id, change_note=change_note.strip(),
         )
     except SystemExit as exc:
         raise HTTPException(status_code=409, detail=str(exc))
@@ -228,13 +247,100 @@ def ui_revise(question_id: str, k: str = "", text: str = Form(...), change_note:
 
 @app.post("/ui/questions/{question_id}/validate")
 def ui_validate(question_id: str, k: str = "", decision_note: str = Form(...)):
-    require_ui_key(k)
+    researcher_id, _ = resolve_actor(k)
     from src.application import rq_lifecycle as lifecycle
 
     try:
         lifecycle.validate(
-            question_id=question_id, researcher_id="pilot", decision_note=decision_note.strip(),
+            question_id=question_id, researcher_id=researcher_id, decision_note=decision_note.strip(),
         )
     except SystemExit as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     return RedirectResponse(url=f"/ui/questions/{question_id}?k={k}", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Stripe webhook (Milestone 4): payment_confirmed → customer → token → project
+# ---------------------------------------------------------------------------
+import stripe as stripe_lib
+
+
+@app.post("/webhooks/stripe")
+async def stripe_webhook(request: Request):
+    secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+    if not secret:
+        raise HTTPException(status_code=503, detail="STRIPE_WEBHOOK_SECRET unset.")
+    payload = await request.body()
+    signature = request.headers.get("stripe-signature", "")
+    try:
+        event = stripe_lib.Webhook.construct_event(payload, signature, secret)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid Stripe signature.")
+
+    if event["type"] != "checkout.session.completed":
+        return {"received": True, "ignored": event["type"]}
+
+    session = event["data"]["object"]
+    from src.domain import events as ev
+    from src.domain.events import new_id
+    from src.services.firestore_repository import FirestoreRepository
+    from src.settings import settings
+    from datetime import datetime, timezone
+
+    repo = FirestoreRepository(settings.gcp_project_id, settings.firestore_database)
+
+    # Stripe returns a StripeObject; normalize it before dictionary access.
+    session = session.to_dict()
+
+    # Idempotency: Stripe retries webhooks; never double-onboard.
+    existing = repo.get_customer_by_session(session["id"])
+    if existing:
+        log.info("webhook replay for session %s -> customers/%s (noop)", session["id"], existing)
+        return {"received": True, "customer_id": existing, "replay": True}
+
+    customer_id = new_id("cus")
+    access_token = secrets.token_urlsafe(24)
+    project_id = f"proj_{customer_id}"
+    correlation_id = new_id("cor")
+    email = (session.get("customer_details") or {}).get("email") or session.get("customer_email") or ""
+    name = (session.get("customer_details") or {}).get("name") or ""
+
+    repo.create_customer(
+        customer_id,
+        {
+            "email": email,
+            "name": name,
+            "stripe_session_id": session["id"],
+            "stripe_customer_id": session.get("customer"),
+            "amount_total": session.get("amount_total"),
+            "currency": session.get("currency"),
+            "payment_status": session.get("payment_status"),
+            "access_token": access_token,
+            "project_id": project_id,
+            "status": "active",
+            "schema_version": "0.1",
+            "created_at": datetime.now(timezone.utc),
+        },
+    )
+    e_pay = ev.payment_confirmed(
+        project_id=project_id,
+        customer_id=customer_id,
+        stripe_session_id=session["id"],
+        amount_total=session.get("amount_total") or 0,
+        currency=session.get("currency") or "mxn",
+        payment_status=session.get("payment_status") or "unknown",
+        customer_email=email,
+        correlation_id=correlation_id,
+    )
+    repo.write_event(e_pay)
+    repo.ensure_project(
+        project_id, owner_id=customer_id,
+        title=f"Proyecto de investigación — {name or email or customer_id}", language="es",
+    )
+    e_onb = ev.customer_onboarded(
+        project_id=project_id, customer_id=customer_id,
+        correlation_id=correlation_id, causation_id=e_pay.event_id,
+    )
+    repo.write_event(e_onb)
+    log.info("onboarded customers/%s (project %s) from session %s", customer_id, project_id, session["id"])
+    return {"received": True, "customer_id": customer_id}

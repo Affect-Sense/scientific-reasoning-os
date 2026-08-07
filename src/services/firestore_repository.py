@@ -135,3 +135,31 @@ class FirestoreRepository:
     def get_agent_run(self, run_id: str) -> dict[str, Any] | None:
         snap = self.db.collection("agent_runs").document(run_id).get()
         return snap.to_dict() if snap.exists else None
+
+    # -- customers (Milestone 4) --------------------------------------------
+
+    def create_customer(self, customer_id: str, record: dict[str, Any]) -> str:
+        self.db.collection("customers").document(customer_id).set(record)
+        log.info("created customers/%s", customer_id)
+        return customer_id
+
+    def get_customer_by_token(self, token: str) -> tuple[str, dict[str, Any]] | None:
+        docs = list(
+            self.db.collection("customers")
+            .where("access_token", "==", token)
+            .where("status", "==", "active")
+            .limit(1)
+            .stream()
+        )
+        if not docs:
+            return None
+        return docs[0].id, docs[0].to_dict()
+
+    def get_customer_by_session(self, stripe_session_id: str) -> str | None:
+        docs = list(
+            self.db.collection("customers")
+            .where("stripe_session_id", "==", stripe_session_id)
+            .limit(1)
+            .stream()
+        )
+        return docs[0].id if docs else None

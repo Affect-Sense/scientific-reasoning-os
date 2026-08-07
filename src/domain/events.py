@@ -233,3 +233,60 @@ def question_validated(
         causation_id=causation_id,
         payload={"version_id": version_id, "decision_note": decision_note},
     )
+
+
+# ---------------------------------------------------------------------------
+# Commercial events (Milestone 4). payment_confirmed is required as a
+# first-class event by the delivery brief; not in Event Catalogue v0.1 —
+# extension recorded in docs/decisions (proposed for catalogue v0.2).
+# ---------------------------------------------------------------------------
+
+def payment_confirmed(
+    *,
+    project_id: str,
+    customer_id: str,
+    stripe_session_id: str,
+    amount_total: int,
+    currency: str,
+    payment_status: str,
+    customer_email: str,
+    correlation_id: str,
+) -> Event:
+    return Event(
+        event_type="payment_confirmed",
+        producer="stripe_webhook",
+        actor_type="system",
+        actor_id="stripe",
+        project_id=project_id,
+        object_type="customer",
+        object_id=customer_id,
+        correlation_id=correlation_id,
+        payload={
+            "stripe_session_id": stripe_session_id,
+            "amount_total": amount_total,
+            "currency": currency,
+            "payment_status": payment_status,
+            "customer_email": customer_email,
+        },
+    )
+
+
+def customer_onboarded(
+    *,
+    project_id: str,
+    customer_id: str,
+    correlation_id: str,
+    causation_id: str,
+) -> Event:
+    return Event(
+        event_type="customer_onboarded",
+        producer="stripe_webhook",
+        actor_type="system",
+        actor_id="onboarding",
+        project_id=project_id,
+        object_type="customer",
+        object_id=customer_id,
+        correlation_id=correlation_id,
+        causation_id=causation_id,
+        payload={"access": "ui_token_minted", "project_id": project_id},
+    )

@@ -47,3 +47,37 @@ def test_ui_index_renders(monkeypatch):
     monkeypatch.setenv("API_KEY", "k")
     r = client.get("/ui?k=k")
     assert r.status_code == 200 and "pregunta de investigación" in r.text.lower()
+
+
+def _stripe_sig(payload: bytes, secret: str) -> str:
+    import hmac, hashlib, time
+    t = int(time.time())
+    signed = f"{t}.".encode() + payload
+    v1 = hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
+    return f"t={t},v1={v1}"
+
+
+def test_webhook_fail_closed(monkeypatch):
+    monkeypatch.delenv("STRIPE_WEBHOOK_SECRET", raising=False)
+    r = client.post("/webhooks/stripe", content=b"{}")
+    assert r.status_code == 503
+
+
+def test_webhook_rejects_bad_signature(monkeypatch):
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+    r = client.post(
+        "/webhooks/stripe", content=b"{}", headers={"stripe-signature": "t=1,v1=deadbeef"}
+    )
+    assert r.status_code == 400
+
+
+def test_webhook_ignores_other_event_types(monkeypatch):
+    import json
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+    payload = json.dumps({"object": "event", "type": "invoice.paid", "data": {"object": {}}}).encode()
+    r = client.post(
+        "/webhooks/stripe",
+        content=payload,
+        headers={"stripe-signature": _stripe_sig(payload, "whsec_test")},
+    )
+    assert r.status_code == 200 and r.json()["ignored"] == "invoice.paid"
