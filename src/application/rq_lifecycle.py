@@ -153,8 +153,21 @@ def run_critique_cycle(
     )
     repo.write_event(e_created)
 
+    # Deterministic recommendation (decision 13): derived in code from the
+    # severities. The model's recommended_next_event is advisory only.
+    has_blocker = any(f.severity in ("major", "blocking") for f in critique.findings)
+    applied_recommendation = (
+        "question_revision_requested" if has_blocker else "question_ready_for_validation"
+    )
+    if applied_recommendation != critique.recommended_next_event:
+        log.warning(
+            "A-02 advisory recommendation (%s) overridden by deterministic rule (%s) "
+            "for %s/%s", critique.recommended_next_event, applied_recommendation,
+            question_id, version_id,
+        )
+
     # Recommendation becomes a first-class catalogue event (M2) ------------
-    if critique.recommended_next_event == "question_revision_requested":
+    if applied_recommendation == "question_revision_requested":
         reasons = [
             f"{f.criterion}: {f.assessment}"
             for f in critique.findings
@@ -194,7 +207,8 @@ def run_critique_cycle(
         "events": [e_started.event_id, e_created.event_id, e_next.event_id],
         "status": new_status,
         "inquiry_type": critique.inquiry_type,
-        "recommended_next_event": critique.recommended_next_event,
+        "recommended_next_event": applied_recommendation,
+        "model_advisory_recommendation": critique.recommended_next_event,
         "latency_ms": latency_ms,
         "token_usage": usage.total_tokens,
         "estimated_cost_usd": estimated_cost,

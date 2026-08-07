@@ -81,3 +81,8 @@ def test_webhook_ignores_other_event_types(monkeypatch):
         headers={"stripe-signature": _stripe_sig(payload, "whsec_test")},
     )
     assert r.status_code == 200 and r.json()["ignored"] == "invoice.paid"
+
+
+def test_welcome_without_session_renders_waiting_page():
+    r = client.get("/welcome")
+    assert r.status_code == 200 and "Preparando tu acceso" in r.text

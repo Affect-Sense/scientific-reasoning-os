@@ -344,3 +344,39 @@ async def stripe_webhook(request: Request):
     repo.write_event(e_onb)
     log.info("onboarded customers/%s (project %s) from session %s", customer_id, project_id, session["id"])
     return {"received": True, "customer_id": customer_id}
+
+
+# ---------------------------------------------------------------------------
+# Post-checkout welcome: Stripe redirects here; we forward to the pilot's
+# personal tokenized UI link. Webhook may lag checkout by a second or two,
+# so unknown sessions get a brief auto-refresh instead of an error.
+# ---------------------------------------------------------------------------
+@app.get("/welcome", response_class=HTMLResponse)
+def welcome(session_id: str = ""):
+    if session_id:
+        try:
+            from src.services.firestore_repository import FirestoreRepository
+            from src.settings import settings
+
+            repo = FirestoreRepository(settings.gcp_project_id, settings.firestore_database)
+            docs = list(
+                repo.db.collection("customers")
+                .where("stripe_session_id", "==", session_id)
+                .limit(1)
+                .stream()
+            )
+            if docs:
+                token = docs[0].to_dict().get("access_token", "")
+                if token:
+                    return RedirectResponse(url=f"/ui?k={token}", status_code=303)
+        except Exception:
+            log.exception("welcome lookup failed")
+    return HTMLResponse(
+        """<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+        <meta http-equiv="refresh" content="3">
+        <title>Preparando tu acceso…</title></head>
+        <body style="font-family:sans-serif;max-width:640px;margin:4rem auto;">
+        <h1>Preparando tu acceso…</h1>
+        <p>Estamos creando tu espacio de trabajo. Esta página se actualizará
+        automáticamente en unos segundos.</p></body></html>"""
+    )
