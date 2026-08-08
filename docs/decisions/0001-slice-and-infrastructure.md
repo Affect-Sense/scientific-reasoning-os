@@ -56,3 +56,9 @@
     an explicit actor/customer attribution field; today ownership resolves
     only via project_id -> customers, two hops. Surfaced during the first
     pilot compliance audit (Gustavo, 3 runs, PASS).
+
+15. Milestone 5 closed 8 Aug on evidence already banked: live customer
+    completed checkout -> submit -> critique -> validate unaided
+    (cus_3fdb07b3eeb3, 7 Aug); pilot completed three critique cycles across
+    revisions in an unfamiliar domain (neuroimaging). Multi-step user
+    outcome demonstrated by two independent real users.
