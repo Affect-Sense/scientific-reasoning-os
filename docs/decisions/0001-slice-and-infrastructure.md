@@ -70,3 +70,13 @@
     hotfix made directly on this machine must be reported back to the
     engineering agent so its working copy is updated. The normalization now
     lives in the repo with a guard (hasattr check) so re-application is safe.
+
+17. Milestone 6 closed 10 Aug: three external researchers (PhD-level) used
+    the deployed system via the live funnel and delivered substantive
+    documented feedback — UX audit (shipped same day), agent-rules
+    compliance probe (audited: PASS), and expert-segmentation critique
+    (validated the ladder positioning; Advanced Researcher Mode filed as
+    post-freeze backlog). All external questions currently stop at the
+    validation gate (0/5 externally validated) — open product question
+    under live observation. Revenue note: all onboarding to date via promo
+    code (MX$0); first real-revenue test in progress (Wave 1 emails, 10 Aug).
