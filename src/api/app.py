@@ -182,8 +182,41 @@ def resolve_actor(k: str = "") -> tuple[str, str]:
 
 @app.get("/ui", response_class=HTMLResponse)
 def ui_index(request: Request, k: str = ""):
-    resolve_actor(k)
-    return templates.TemplateResponse(request, "index.html", {"k": k})
+    _researcher_id, project_id = resolve_actor(k)
+    questions = []
+    try:
+        from src.services.firestore_repository import FirestoreRepository
+        from src.settings import settings
+
+        repo = FirestoreRepository(settings.gcp_project_id, settings.firestore_database)
+        docs = (
+            repo.db.collection("research_questions")
+            .where("project_id", "==", project_id)
+            .stream()
+        )
+        for d in docs:
+            q = d.to_dict()
+            versions = list(
+                repo.db.collection("research_questions").document(d.id)
+                .collection("versions").stream()
+            )
+            current = next(
+                (v.to_dict() for v in versions if v.id == q.get("current_version_id")), None
+            )
+            text = (current or {}).get("text", "")
+            questions.append(
+                {
+                    "id": d.id,
+                    "text_preview": text[:110] + ("…" if len(text) > 110 else ""),
+                    "status_es": STATUS_ES.get(q.get("status"), q.get("status")),
+                    "n_versions": len(versions),
+                    "updated_at": str(q.get("updated_at", "")),
+                }
+            )
+        questions.sort(key=lambda x: x["updated_at"], reverse=True)
+    except Exception:
+        log.exception("question list failed; rendering without it")
+    return templates.TemplateResponse(request, "index.html", {"k": k, "questions": questions})
 
 
 @app.post("/ui/questions")
@@ -281,6 +314,8 @@ async def stripe_webhook(request: Request):
         return {"received": True, "ignored": event["type"]}
 
     session = event["data"]["object"]
+    if hasattr(session, "to_dict"):
+        session = session.to_dict()
     from src.domain import events as ev
     from src.domain.events import new_id
     from src.services.firestore_repository import FirestoreRepository
@@ -288,9 +323,6 @@ async def stripe_webhook(request: Request):
     from datetime import datetime, timezone
 
     repo = FirestoreRepository(settings.gcp_project_id, settings.firestore_database)
-
-    # Stripe returns a StripeObject; normalize it before dictionary access.
-    session = session.to_dict()
 
     # Idempotency: Stripe retries webhooks; never double-onboard.
     existing = repo.get_customer_by_session(session["id"])

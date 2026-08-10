@@ -62,3 +62,11 @@
     (cus_3fdb07b3eeb3, 7 Aug); pilot completed three critique cycles across
     revisions in an unfamiliar domain (neuroimaging). Multi-step user
     outcome demonstrated by two independent real users.
+
+16. Process defect, second occurrence (10 Aug): overlay deliveries built
+    outside the repo overwrote a committed hotfix (Stripe session
+    normalization), regressing the live webhook. Rule going forward: after
+    any overlay unzip, run `git diff` and review before deploying; any
+    hotfix made directly on this machine must be reported back to the
+    engineering agent so its working copy is updated. The normalization now
+    lives in the repo with a guard (hasattr check) so re-application is safe.

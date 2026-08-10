@@ -7,6 +7,8 @@
    {% if q.locked_by %}&nbsp;·&nbsp; Validada por: {{ q.locked_by }}{% endif %}</p>
 
 <h2>Historial de versiones</h2>
+<p class="help">Cada versión de tu pregunta queda guardada con su nota de cambio —
+tu bitácora de cómo evolucionó el razonamiento.</p>
 {% for v in q.versions %}
 <div class="lineage">
   <p><strong>{{ v.version_id }}</strong>
@@ -18,6 +20,12 @@
 
 {% if c %}
 <h2>Última crítica de A-02</h2>
+<p class="help">Cuatro criterios con severidad (ok / minor / major). <strong>Supuestos</strong>:
+lo que tu pregunta da por sentado. <strong>Información faltante</strong>: lo que el agente
+necesitaría y tú no has dicho — se agrega escribiéndolo en tu siguiente revisión.
+<strong>Sugerencias de revisión</strong>: acciones concretas para la próxima versión.
+<strong>Notas para diseño</strong>: decisiones de método que vendrán después — no bloquean.
+<strong>Incertidumbre</strong>: lo que el agente honestamente no puede juzgar.</p>
 <div class="card">
   {% for f in c.findings %}
   <p><span class="sev sev-{{ f.severity }}">{{ f.severity }}</span>
@@ -43,9 +51,15 @@
 {% if q.status == "validated" %}
 <p class="notice">Esta pregunta está <strong>validada y bloqueada</strong>. Desbloquearla será un acto
 deliberado en una versión futura del sistema.</p>
+<div class="next"><strong>¿Y ahora qué?</strong> Con una pregunta defendible, el siguiente paso
+es el mapa de evidencia: qué se sabe, qué no, y dónde está tu hueco. Ese es exactamente el
+punto de partida del <strong>Taller Avanzado</strong> de AffectSense (septiembre). Escríbenos
+por WhatsApp para reservar tu lugar.</div>
 {% else %}
 <h2>Enviar una revisión</h2>
-<form method="post" action="/ui/questions/{{ q.question_id }}/revise?k={{ k }}">
+<p class="help">Reescribe tu pregunta incorporando lo que decidas de la crítica. La nota de
+cambio (qué cambiaste y por qué) es tu procedencia científica.</p>
+<form method="post" action="/ui/questions/{{ q.question_id }}/revise?k={{ k }}" data-busy="critique">
   <textarea name="text" required minlength="10" placeholder="Nueva versión de tu pregunta">{{ current_text }}</textarea>
   <input type="text" name="change_note" required minlength="5"
          placeholder="Nota de cambio: qué cambiaste y por qué (procedencia científica)">
@@ -53,6 +67,9 @@ deliberado en una versión futura del sistema.</p>
 </form>
 
 <h2>Validar y bloquear</h2>
+<p class="help">¿Cuándo está lista? Cuando el estado diga <strong>“lista para validar”</strong>
+(sin hallazgos major), o antes si tú lo decides — la autoridad es tuya y tu nota de decisión
+queda registrada.</p>
 {% if q.status == "awaiting_revision" %}
 <p class="notice">A-02 recomendó revisar. Puedes validar de todas formas: la decisión es tuya
 y quedará registrada.</p>

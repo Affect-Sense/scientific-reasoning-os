@@ -31,13 +31,33 @@
     .lineage { border-left: 3px solid var(--accent); padding-left: .9rem; margin: .5rem 0; }
     ul { padding-left: 1.2rem; }
     .notice { background:#fff8e6; border:1px solid #e8d59a; border-radius:6px; padding:.6rem .9rem; font-size:.9rem; }
+    .help { color:#555; font-size:.85rem; margin:-.4rem 0 .6rem; }
+    .next { background:#eef6ee; border:1px solid #bcd8bc; border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; }
+    #busy { display:none; position:fixed; inset:0; background:rgba(255,255,255,.92); z-index:9; }
+    #busy .inner { max-width:420px; margin:35vh auto; text-align:center; }
+    .spin { width:34px; height:34px; border:4px solid #d8d8e0; border-top-color:var(--accent);
+            border-radius:50%; margin:0 auto 1rem; animation:r 1s linear infinite; }
+    @keyframes r { to { transform:rotate(360deg); } }
   </style>
 </head>
 <body>
+<div id="busy"><div class="inner"><div class="spin"></div>
+  <p><strong>El agente está analizando tu pregunta…</strong><br>
+  <span class="muted">Esto toma entre 10 y 30 segundos. Tu petición ya fue recibida — no cierres la página.</span></p>
+</div></div>
 <main>
   <p><span class="brand">Scientific Reasoning OS</span> <span class="beta">BETA</span><br>
   <span class="muted">AffectSense — El agente critica; la persona investigadora decide.</span></p>
   {% block content %}{% endblock %}
 </main>
+<script>
+  document.addEventListener("submit", function (e) {
+    var f = e.target;
+    if (f.dataset.busy === "critique") {
+      document.getElementById("busy").style.display = "block";
+      var b = f.querySelector("button"); if (b) { b.disabled = true; }
+    }
+  });
+</script>
 </body>
 </html>

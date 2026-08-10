@@ -1,12 +1,31 @@
 {% extends "base.html" %}
-{% block title %}Nueva pregunta — Scientific Reasoning OS{% endblock %}
+{% block title %}Tu espacio — Scientific Reasoning OS{% endblock %}
 {% block content %}
-<h1>Envía tu pregunta de investigación</h1>
-<p class="muted">El Agente de Pregunta Científica (A-02) evaluará claridad, relevancia,
-factibilidad y falsabilidad en la etapa de formulación. No inventa literatura ni
-decide por ti.</p>
-<form method="post" action="/ui/questions?k={{ k }}">
+<h1>Tu espacio de trabajo</h1>
+<p>Aquí desarrollas tu pregunta de investigación con ayuda del <strong>Agente de
+Pregunta Científica (A-02)</strong>. El proceso: <strong>1)</strong> escribes tu
+pregunta (un borrador está perfecto), <strong>2)</strong> el agente la evalúa en
+cuatro criterios — claridad, relevancia, factibilidad y falsabilidad — y te
+señala supuestos, información faltante y sugerencias concretas,
+<strong>3)</strong> tú la revisas cuantas veces quieras (cada versión queda
+guardada), y <strong>4)</strong> cuando tú decidas, la validas. El agente
+critica; tú decides.</p>
+
+{% if questions %}
+<h2>Tus preguntas</h2>
+{% for q in questions %}
+<div class="card">
+  <p><a href="/ui/questions/{{ q.id }}?k={{ k }}"><strong>{{ q.text_preview }}</strong></a><br>
+  <span class="muted">Estado: {{ q.status_es }} · {{ q.n_versions }} versión(es)</span></p>
+</div>
+{% endfor %}
+{% endif %}
+
+<h2>{% if questions %}Nueva pregunta{% else %}Envía tu primera pregunta{% endif %}</h2>
+<form method="post" action="/ui/questions?k={{ k }}" data-busy="critique">
   <label for="text"><strong>Pregunta de investigación</strong></label>
+  <p class="help">Escríbela como la tengas hoy. No necesita estar perfecta —
+  para eso es la crítica.</p>
   <textarea id="text" name="text" required minlength="10"
     placeholder="Escribe aquí tu pregunta de investigación (borrador está bien)"></textarea>
   <p><strong>Idioma de la crítica</strong><br>
@@ -14,6 +33,9 @@ decide por ti.</p>
     &nbsp;&nbsp;<label><input type="radio" name="language" value="en"> English</label>
   </p>
   <button type="submit">Enviar para crítica</button>
-  <p class="muted">La crítica tarda entre 10 y 30 segundos. No cierres la página.</p>
 </form>
+
+<p class="muted" style="margin-top:2rem">Ficha técnica: Gemini 2.5 Flash (Vertex AI),
+temperatura 0.2, sin memoria conversacional — la memoria vive en tu historial de
+versiones, y cada corrida queda auditada (versión del prompt, tokens, costo).</p>
 {% endblock %}
