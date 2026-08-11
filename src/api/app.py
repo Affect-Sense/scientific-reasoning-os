@@ -179,7 +179,10 @@ UI_STR = {
         "back": "← Nueva pregunta",
         "busy_title": "El agente está analizando tu pregunta…",
         "busy_body": "Esto toma entre 10 y 30 segundos. Tu petición ya fue recibida — no cierres la página.",
-        "footer": "Powered by Gemini 2.5 Flash (Vertex AI) · Temperatura 0.2 · Cada corrida queda auditada (versión del prompt, tokens, costo)",
+        "footer": "Powered by Gemini 2.5 Flash (Vertex AI)",
+        "err_title": "El agente está saturado en este momento",
+        "err_body": "Demasiadas solicitudes al modelo justo ahora. Tu pregunta NO se perdió — está abajo. Espera ~1 minuto y vuelve a enviarla.",
+        "err_btn": "Reintentar",
         "process": "El proceso: <strong>1)</strong> escribes tu pregunta (un borrador está perfecto), <strong>2)</strong> el agente la evalúa en cuatro criterios y te señala supuestos, información faltante y sugerencias, <strong>3)</strong> la revisas cuantas veces quieras (cada versión queda guardada), y <strong>4)</strong> cuando tú decidas, la validas.",
         "version_s": "versión(es)",
     },
@@ -223,7 +226,10 @@ UI_STR = {
         "back": "← New question",
         "busy_title": "The agent is analysing your question…",
         "busy_body": "This takes 10–30 seconds. Your request has been received — don't close the page.",
-        "footer": "Powered by Gemini 2.5 Flash (Vertex AI) · Temperature 0.2 · Every run is audited (prompt version, tokens, cost)",
+        "footer": "Powered by Gemini 2.5 Flash (Vertex AI)",
+        "err_title": "The agent is saturated right now",
+        "err_body": "Too many model requests at this moment. Your question was NOT lost — it is below. Wait ~1 minute and submit again.",
+        "err_btn": "Retry",
         "process": "The process: <strong>1)</strong> write your question (a draft is perfect), <strong>2)</strong> the agent evaluates it on four criteria and flags assumptions, missing information and suggestions, <strong>3)</strong> revise as many times as you like (every version is preserved), and <strong>4)</strong> when you decide, validate it.",
         "version_s": "version(s)",
     },
@@ -302,6 +308,26 @@ def ui_index(request: Request, k: str = "", lang: str = ""):
     return templates.TemplateResponse(request, "index.html", {"k": k, "questions": questions, "t": UI_STR[L], "lang": L})
 
 
+def _agent_busy_page(t: dict, action: str, text: str, extra_fields: str = "", language: str = "es") -> HTMLResponse:
+    import html as _html
+    safe_text = _html.escape(text)
+    return HTMLResponse(
+        status_code=503,
+        content=f"""<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{t['err_title']}</title></head>
+        <body style="font-family:-apple-system,sans-serif;max-width:680px;margin:3rem auto;line-height:1.5;">
+        <h1 style="font-size:1.2rem;">{t['err_title']}</h1>
+        <p>{t['err_body']}</p>
+        <form method="post" action="{action}">
+          <textarea name="text" style="width:100%;min-height:7rem;font:inherit;">{safe_text}</textarea>
+          <input type="hidden" name="language" value="{language}">
+          {extra_fields}
+          <button type="submit" style="margin-top:.6rem;padding:.6rem 1.2rem;">{t['err_btn']}</button>
+        </form></body></html>""",
+    )
+
+
 @app.post("/ui/questions")
 def ui_submit(k: str = "", lang: str = "", text: str = Form(...), language: str = Form(...)):
     researcher_id, project_id = resolve_actor(k)
@@ -314,11 +340,17 @@ def ui_submit(k: str = "", lang: str = "", text: str = Form(...), language: str 
         project_id, owner_id=researcher_id,
         title=f"Proyecto de investigación — {researcher_id}", language=language,
     )
-    result = lifecycle.submit(
-        text=text.strip(), language=language, researcher_id=researcher_id,
-        project_id=project_id, change_note=None,
-    )
+    from src.services.gemini_client import GeminiStructuredError, GeminiUnavailableError
+
     L = pick_lang(lang)
+    try:
+        result = lifecycle.submit(
+            text=text.strip(), language=language, researcher_id=researcher_id,
+            project_id=project_id, change_note=None,
+        )
+    except (GeminiUnavailableError, GeminiStructuredError):
+        log.warning("submit degraded to busy page (model unavailable/invalid)")
+        return _agent_busy_page(UI_STR[L], f"/ui/questions?k={k}&lang={L}", text, language=language)
     return RedirectResponse(url=f"/ui/questions/{result['question_id']}?k={k}&lang={L}", status_code=303)
 
 
@@ -353,7 +385,9 @@ def ui_question(request: Request, question_id: str, k: str = "", lang: str = "")
 def ui_revise(question_id: str, k: str = "", lang: str = "", text: str = Form(...), change_note: str = Form(...)):
     researcher_id, _ = resolve_actor(k)
     from src.application import rq_lifecycle as lifecycle
+    from src.services.gemini_client import GeminiStructuredError, GeminiUnavailableError
 
+    L = pick_lang(lang)
     try:
         lifecycle.revise(
             question_id=question_id, text=text.strip(),
@@ -361,7 +395,14 @@ def ui_revise(question_id: str, k: str = "", lang: str = "", text: str = Form(..
         )
     except SystemExit as exc:
         raise HTTPException(status_code=409, detail=str(exc))
-    return RedirectResponse(url=f"/ui/questions/{question_id}?k={k}&lang={pick_lang(lang)}", status_code=303)
+    except (GeminiUnavailableError, GeminiStructuredError):
+        import html as _html
+        log.warning("revise degraded to busy page (model unavailable/invalid)")
+        extra = f'<input type="hidden" name="change_note" value="{_html.escape(change_note)}">'
+        return _agent_busy_page(
+            UI_STR[L], f"/ui/questions/{question_id}/revise?k={k}&lang={L}", text, extra_fields=extra
+        )
+    return RedirectResponse(url=f"/ui/questions/{question_id}?k={k}&lang={L}", status_code=303)
 
 
 @app.post("/ui/questions/{question_id}/validate")

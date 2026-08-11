@@ -101,3 +101,40 @@ def test_ui_spanish_default_unchanged(monkeypatch):
     r = client.get("/ui?k=k")
     assert r.status_code == 200
     assert "Tu espacio de trabajo" in r.text and "No inventa literatura" in r.text
+
+
+def test_should_retry_codes():
+    from google.genai import errors as ge
+    from src.services.gemini_client import should_retry
+
+    class Fake(ge.APIError):
+        def __init__(self, code):
+            self.code = code
+            Exception.__init__(self, f"code {code}")
+
+    assert should_retry(Fake(429)) and should_retry(Fake(503))
+    assert not should_retry(Fake(400))
+    assert not should_retry(ValueError("x"))
+
+
+def test_submit_saturation_preserves_text(monkeypatch):
+    monkeypatch.setenv("API_KEY", "k")
+    from src.application import rq_lifecycle
+    from src.services.gemini_client import GeminiUnavailableError
+
+    def boom(**kwargs):
+        raise GeminiUnavailableError("still 429")
+
+    monkeypatch.setattr(rq_lifecycle, "submit", boom)
+    import src.api.app as appmod
+    from src.services.firestore_repository import FirestoreRepository
+    monkeypatch.setattr(appmod, "resolve_actor", lambda k="": ("genaro", "proj_lak2027"))
+    monkeypatch.setattr(FirestoreRepository, "__init__", lambda self, *a, **kw: None)
+    monkeypatch.setattr(FirestoreRepository, "ensure_project", lambda self, *a, **kw: "proj_lak2027")
+    r = client.post(
+        "/ui/questions?k=k&lang=en",
+        data={"text": "Does X affect Y in Z populations?", "language": "en"},
+    )
+    assert r.status_code == 503
+    assert "Does X affect Y in Z populations?" in r.text
+    assert "NOT lost" in r.text
