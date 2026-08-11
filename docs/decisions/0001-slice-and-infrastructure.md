@@ -80,3 +80,12 @@
     validation gate (0/5 externally validated) — open product question
     under live observation. Revenue note: all onboarding to date via promo
     code (MX$0); first real-revenue test in progress (Wave 1 emails, 10 Aug).
+
+18. Milestone 7 closed 11 Aug on its own definition (traceability): workshop
+    revenue MX$17,507 (10 customers, July 2026, Stripe -> Klar, statements
+    exported); SROS beta launched 6 Aug — live-payable rail verified twice,
+    9 customers onboarded via the autonomous funnel (promo-comped pilots;
+    founders-price offers in market, W1 cohort deliberately held for the
+    September W2 launch); AI operating cost US$0.11 for 36 audited runs;
+    infra <US$20/month. Every figure exports from Stripe, Klar, GCP Billing,
+    or the agent_runs ledger.
