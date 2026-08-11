@@ -138,3 +138,13 @@ def test_submit_saturation_preserves_text(monkeypatch):
     assert r.status_code == 503
     assert "Does X affect Y in Z populations?" in r.text
     assert "NOT lost" in r.text
+
+
+def test_resolve_ui_lang_precedence():
+    from src.api.app import resolve_ui_lang
+
+    assert resolve_ui_lang("en", "es") == "en"      # explicit param wins
+    assert resolve_ui_lang("", "en") == "en"        # question language drives
+    assert resolve_ui_lang("", "es") == "es"
+    assert resolve_ui_lang("", None) == "es"        # default
+    assert resolve_ui_lang("xx", "en") == "en"      # junk param ignored

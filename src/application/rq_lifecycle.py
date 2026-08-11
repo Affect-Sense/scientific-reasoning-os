@@ -389,6 +389,7 @@ def show(*, question_id: str) -> dict:
         lineage.append(
             {
                 "version_id": vid,
+                "language": v.get("language", "es"),
                 "parent_version_id": v.get("parent_version_id"),
                 "author": f'{v.get("author_type")}:{v.get("author_id")}',
                 "change_note": v.get("change_note"),

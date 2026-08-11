@@ -240,6 +240,16 @@ def pick_lang(lang: str = "") -> str:
     return "en" if lang == "en" else "es"
 
 
+def resolve_ui_lang(param: str, question_lang: str | None = None) -> str:
+    """One language concept: explicit URL param wins (filming/admin override),
+    else the question's own critique language, else Spanish."""
+    if param in ("en", "es"):
+        return param
+    if question_lang in ("en", "es"):
+        return question_lang
+    return "es"
+
+
 def resolve_actor(k: str = "") -> tuple[str, str]:
     """Returns (researcher_id, project_id) for a UI access token.
 
@@ -342,7 +352,7 @@ def ui_submit(k: str = "", lang: str = "", text: str = Form(...), language: str 
     )
     from src.services.gemini_client import GeminiStructuredError, GeminiUnavailableError
 
-    L = pick_lang(lang)
+    L = pick_lang(language)  # the critique-language choice drives the whole experience
     try:
         result = lifecycle.submit(
             text=text.strip(), language=language, researcher_id=researcher_id,
@@ -357,7 +367,6 @@ def ui_submit(k: str = "", lang: str = "", text: str = Form(...), language: str 
 @app.get("/ui/questions/{question_id}", response_class=HTMLResponse)
 def ui_question(request: Request, question_id: str, k: str = "", lang: str = ""):
     resolve_actor(k)
-    L = pick_lang(lang)
     from src.application import rq_lifecycle as lifecycle
 
     try:
@@ -365,9 +374,12 @@ def ui_question(request: Request, question_id: str, k: str = "", lang: str = "")
     except SystemExit as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     current_text = ""
+    question_lang = None
     for v in q["versions"]:
         if v["version_id"] == q["current_version_id"]:
             current_text = v["text"]
+            question_lang = v.get("language")
+    L = resolve_ui_lang(lang, question_lang)
     return templates.TemplateResponse(
         request,
         "question.html",
