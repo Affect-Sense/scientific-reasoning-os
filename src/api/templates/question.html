@@ -1,85 +1,69 @@
 {% extends "base.html" %}
 {% block title %}{{ q.question_id }} — Scientific Reasoning OS{% endblock %}
 {% block content %}
-<h1>Pregunta {{ q.question_id }}</h1>
-<p>Estado: <span class="status status-{{ q.status }}">{{ status_es }}</span>
-   &nbsp;·&nbsp; Tipo de indagación: {{ q.inquiry_type }}
-   {% if q.locked_by %}&nbsp;·&nbsp; Validada por: {{ q.locked_by }}{% endif %}</p>
+<h1>{{ q.question_id }}</h1>
+<p>{{ t.state }}: <span class="status status-{{ q.status }}">{{ status_es }}</span>
+   &nbsp;·&nbsp; {{ t.inquiry }}: {{ q.inquiry_type }}
+   {% if q.locked_by %}&nbsp;·&nbsp; {{ t.validated_by }}: {{ q.locked_by }}{% endif %}</p>
 
-<h2>Historial de versiones</h2>
-<p class="help">Cada versión de tu pregunta queda guardada con su nota de cambio —
-tu bitácora de cómo evolucionó el razonamiento.</p>
+<h2>{{ t.history }}</h2>
+<p class="help">{{ t.history_help }}</p>
 {% for v in q.versions %}
 <div class="lineage">
   <p><strong>{{ v.version_id }}</strong>
-     {% if v.version_id == q.current_version_id %}<span class="muted">(actual)</span>{% endif %}<br>
+     {% if v.version_id == q.current_version_id %}<span class="muted">{{ t.current }}</span>{% endif %}<br>
      {{ v.text }}<br>
-     <span class="muted">Autor: {{ v.author }}{% if v.change_note %} — “{{ v.change_note }}”{% endif %}</span></p>
+     <span class="muted">{{ t.author }}: {{ v.author }}{% if v.change_note %} — “{{ v.change_note }}”{% endif %}</span></p>
 </div>
 {% endfor %}
 
 {% if c %}
-<h2>Última crítica de A-02</h2>
-<p class="help">Cuatro criterios con severidad (ok / minor / major). <strong>Supuestos</strong>:
-lo que tu pregunta da por sentado. <strong>Información faltante</strong>: lo que el agente
-necesitaría y tú no has dicho — se agrega escribiéndolo en tu siguiente revisión.
-<strong>Sugerencias de revisión</strong>: acciones concretas para la próxima versión.
-<strong>Notas para diseño</strong>: decisiones de método que vendrán después — no bloquean.
-<strong>Incertidumbre</strong>: lo que el agente honestamente no puede juzgar.</p>
+<h2>{{ t.critique_h }}</h2>
+<p class="help">{{ t.critique_help | safe }}</p>
 <div class="card">
   {% for f in c.findings %}
   <p><span class="sev sev-{{ f.severity }}">{{ f.severity }}</span>
      <strong>{{ crit_es.get(f.criterion, f.criterion) }}</strong><br>{{ f.assessment }}</p>
   {% endfor %}
 
-  {% if c.assumptions_exposed %}<p><strong>Supuestos implícitos</strong></p>
+  {% if c.assumptions_exposed %}<p><strong>{{ t.assumptions }}</strong></p>
   <ul>{% for a in c.assumptions_exposed %}<li>{{ a }}</li>{% endfor %}</ul>{% endif %}
 
-  {% if c.missing_information %}<p><strong>Información faltante (etapa de formulación)</strong></p>
+  {% if c.missing_information %}<p><strong>{{ t.missing }}</strong></p>
   <ul>{% for m in c.missing_information %}<li>{{ m.item }} — <span class="muted">{{ m.why_needed }}</span></li>{% endfor %}</ul>{% endif %}
 
-  {% if c.revision_prompts %}<p><strong>Sugerencias de revisión</strong></p>
-  <ul>{% for p in c.revision_prompts %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+  {% if c.revision_prompts %}<p><strong>{{ t.prompts_h }}</strong></p>
+  <ul>{% for pr in c.revision_prompts %}<li>{{ pr }}</li>{% endfor %}</ul>{% endif %}
 
-  {% if c.operationalisation_notes %}<p><strong>Notas para la etapa de diseño (no bloquean la validación)</strong></p>
+  {% if c.operationalisation_notes %}<p><strong>{{ t.opnotes }}</strong></p>
   <ul>{% for n in c.operationalisation_notes %}<li>{{ n }}</li>{% endfor %}</ul>{% endif %}
 
-  <p><strong>Incertidumbre declarada</strong><br><span class="muted">{{ c.uncertainty }}</span></p>
+  <p><strong>{{ t.uncertainty }}</strong><br><span class="muted">{{ c.uncertainty }}</span></p>
 </div>
 {% endif %}
 
 {% if q.status == "validated" %}
-<p class="notice">Esta pregunta está <strong>validada y bloqueada</strong>. Desbloquearla será un acto
-deliberado en una versión futura del sistema.</p>
-<div class="next"><strong>¿Y ahora qué?</strong> Con una pregunta defendible, el siguiente paso
-es el mapa de evidencia: qué se sabe, qué no, y dónde está tu hueco. Ese es exactamente el
-punto de partida del <strong>Taller Avanzado</strong> de AffectSense (septiembre). Escríbenos
-por WhatsApp para reservar tu lugar.</div>
+<p class="notice">{{ t.locked_notice | safe }}</p>
+<div class="next"><strong>{{ t.next_h }}</strong> {{ t.next_body | safe }}</div>
 {% else %}
-<h2>Enviar una revisión</h2>
-<p class="help">Reescribe tu pregunta incorporando lo que decidas de la crítica. La nota de
-cambio (qué cambiaste y por qué) es tu procedencia científica.</p>
-<form method="post" action="/ui/questions/{{ q.question_id }}/revise?k={{ k }}" data-busy="critique">
-  <textarea name="text" required minlength="10" placeholder="Nueva versión de tu pregunta">{{ current_text }}</textarea>
-  <input type="text" name="change_note" required minlength="5"
-         placeholder="Nota de cambio: qué cambiaste y por qué (procedencia científica)">
-  <button type="submit">Enviar revisión para crítica</button>
+<h2>{{ t.revise_h }}</h2>
+<p class="help">{{ t.revise_help }}</p>
+<form method="post" action="/ui/questions/{{ q.question_id }}/revise?k={{ k }}&lang={{ lang }}" data-busy="critique">
+  <textarea name="text" required minlength="10" placeholder="{{ t.new_version_ph }}">{{ current_text }}</textarea>
+  <input type="text" name="change_note" required minlength="5" placeholder="{{ t.change_note_ph }}">
+  <button type="submit">{{ t.revise_btn }}</button>
 </form>
 
-<h2>Validar y bloquear</h2>
-<p class="help">¿Cuándo está lista? Cuando el estado diga <strong>“lista para validar”</strong>
-(sin hallazgos major), o antes si tú lo decides — la autoridad es tuya y tu nota de decisión
-queda registrada.</p>
+<h2>{{ t.validate_h }}</h2>
+<p class="help">{{ t.validate_help | safe }}</p>
 {% if q.status == "awaiting_revision" %}
-<p class="notice">A-02 recomendó revisar. Puedes validar de todas formas: la decisión es tuya
-y quedará registrada.</p>
+<p class="notice">{{ t.validate_warn }}</p>
 {% endif %}
-<form method="post" action="/ui/questions/{{ q.question_id }}/validate?k={{ k }}">
-  <input type="text" name="decision_note" required minlength="5"
-         placeholder="Nota de decisión (por qué la validas)">
-  <button type="submit" class="secondary">Validar como persona investigadora</button>
+<form method="post" action="/ui/questions/{{ q.question_id }}/validate?k={{ k }}&lang={{ lang }}">
+  <input type="text" name="decision_note" required minlength="5" placeholder="{{ t.decision_ph }}">
+  <button type="submit" class="secondary">{{ t.validate_btn }}</button>
 </form>
 {% endif %}
 
-<p class="muted"><a href="/ui?k={{ k }}">← Nueva pregunta</a></p>
+<p class="muted"><a href="/ui?k={{ k }}&lang={{ lang }}">{{ t.back }}</a></p>
 {% endblock %}

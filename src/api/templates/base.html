@@ -42,13 +42,20 @@
 </head>
 <body>
 <div id="busy"><div class="inner"><div class="spin"></div>
-  <p><strong>El agente está analizando tu pregunta…</strong><br>
-  <span class="muted">Esto toma entre 10 y 30 segundos. Tu petición ya fue recibida — no cierres la página.</span></p>
+  <p><strong>{{ t.busy_title }}</strong><br>
+  <span class="muted">{{ t.busy_body }}</span><br>
+  <span class="muted"><span id="elapsed">0</span> s</span></p>
 </div></div>
 <main>
-  <p><span class="brand">Scientific Reasoning OS</span> <span class="beta">BETA</span><br>
-  <span class="muted">AffectSense — El agente critica; la persona investigadora decide.</span></p>
+  <header style="display:flex;align-items:baseline;gap:.7rem;border-bottom:2px solid var(--accent);padding-bottom:.6rem;margin-bottom:1.1rem;">
+    <span style="font-weight:800;font-size:1.25rem;color:var(--accent);letter-spacing:.01em;">AffectSense</span>
+    <span class="brand">Scientific Reasoning OS</span> <span class="beta">BETA</span>
+  </header>
+  <p class="muted" style="margin-top:-0.6rem"><em>{{ t.strapline }}</em></p>
   {% block content %}{% endblock %}
+  <footer class="muted" style="border-top:1px solid #e3e3ea;margin-top:2.2rem;padding-top:.7rem;font-size:.82rem;">
+    {{ t.footer }}
+  </footer>
 </main>
 <script>
   document.addEventListener("submit", function (e) {
@@ -56,6 +63,8 @@
     if (f.dataset.busy === "critique") {
       document.getElementById("busy").style.display = "block";
       var b = f.querySelector("button"); if (b) { b.disabled = true; }
+      var el = document.getElementById("elapsed"), n = 0;
+      setInterval(function () { n += 1; if (el) { el.textContent = n; } }, 1000);
     }
   });
 </script>

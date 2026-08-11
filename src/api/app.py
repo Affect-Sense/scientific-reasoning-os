@@ -138,18 +138,100 @@ from fastapi.templating import Jinja2Templates
 
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
-STATUS_ES = {
-    "draft": "borrador",
-    "awaiting_revision": "esperando revisión",
-    "ready_for_validation": "lista para validar",
-    "validated": "validada",
+UI_STR = {
+    "es": {
+        "status": {"draft": "borrador", "awaiting_revision": "esperando revisión",
+                   "ready_for_validation": "lista para validar", "validated": "validada"},
+        "crit": {"clarity": "Claridad", "relevance": "Relevancia",
+                 "feasibility": "Factibilidad", "falsifiability": "Falsabilidad"},
+        "strapline": "No inventa literatura. No decide por ti.",
+        "intro_line": "Convierte una idea en bruto en una pregunta de investigación defendible. El agente critica. Tú decides.",
+        "workspace": "Tu espacio de trabajo",
+        "your_questions": "Tus preguntas",
+        "new_q": "Nueva pregunta", "first_q": "Envía tu primera pregunta",
+        "q_label": "Pregunta de investigación",
+        "q_help": "Escríbela como la tengas hoy. No necesita estar perfecta — para eso es la crítica.",
+        "q_placeholder": "Escribe aquí tu pregunta de investigación (borrador está bien)",
+        "critique_lang": "Idioma de la crítica",
+        "submit_btn": "Enviar para crítica",
+        "state": "Estado", "inquiry": "Tipo de indagación", "validated_by": "Validada por",
+        "history": "Historial de versiones",
+        "history_help": "Cada versión de tu pregunta queda guardada con su nota de cambio — tu bitácora de cómo evolucionó el razonamiento.",
+        "current": "(actual)", "author": "Autor",
+        "critique_h": "Última crítica de A-02",
+        "critique_help": "Cuatro criterios con severidad (ok / minor / major). Supuestos: lo que tu pregunta da por sentado. Información faltante: lo que el agente necesitaría y tú no has dicho — se agrega escribiéndolo en tu siguiente revisión. Sugerencias de revisión: acciones concretas para la próxima versión. Notas para diseño: decisiones de método que vendrán después — no bloquean. Incertidumbre: lo que el agente honestamente no puede juzgar.",
+        "assumptions": "Supuestos implícitos", "missing": "Información faltante (etapa de formulación)",
+        "prompts_h": "Sugerencias de revisión", "opnotes": "Notas para la etapa de diseño (no bloquean la validación)",
+        "uncertainty": "Incertidumbre declarada",
+        "locked_notice": "Esta pregunta está <strong>validada y bloqueada</strong>. Desbloquearla será un acto deliberado en una versión futura del sistema.",
+        "next_h": "¿Y ahora qué?",
+        "next_body": "Con una pregunta defendible, el siguiente paso es el mapa de evidencia: qué se sabe, qué no, y dónde está tu hueco. Ese es exactamente el punto de partida del <strong>Taller Avanzado</strong> de AffectSense (septiembre). Escríbenos por WhatsApp para reservar tu lugar.",
+        "revise_h": "Enviar una revisión",
+        "revise_help": "Reescribe tu pregunta incorporando lo que decidas de la crítica. La nota de cambio (qué cambiaste y por qué) es tu procedencia científica.",
+        "new_version_ph": "Nueva versión de tu pregunta",
+        "change_note_ph": "Nota de cambio: qué cambiaste y por qué (procedencia científica)",
+        "revise_btn": "Enviar revisión para crítica",
+        "validate_h": "Validar y bloquear",
+        "validate_help": "¿Cuándo está lista? Cuando el estado diga <strong>“lista para validar”</strong> (sin hallazgos major), o antes si tú lo decides — la autoridad es tuya y tu nota de decisión queda registrada.",
+        "validate_warn": "A-02 recomendó revisar. Puedes validar de todas formas: la decisión es tuya y quedará registrada.",
+        "decision_ph": "Nota de decisión (por qué la validas)",
+        "validate_btn": "Validar como persona investigadora",
+        "back": "← Nueva pregunta",
+        "busy_title": "El agente está analizando tu pregunta…",
+        "busy_body": "Esto toma entre 10 y 30 segundos. Tu petición ya fue recibida — no cierres la página.",
+        "footer": "Powered by Gemini 2.5 Flash (Vertex AI) · Temperatura 0.2 · Cada corrida queda auditada (versión del prompt, tokens, costo)",
+        "process": "El proceso: <strong>1)</strong> escribes tu pregunta (un borrador está perfecto), <strong>2)</strong> el agente la evalúa en cuatro criterios y te señala supuestos, información faltante y sugerencias, <strong>3)</strong> la revisas cuantas veces quieras (cada versión queda guardada), y <strong>4)</strong> cuando tú decidas, la validas.",
+        "version_s": "versión(es)",
+    },
+    "en": {
+        "status": {"draft": "draft", "awaiting_revision": "awaiting revision",
+                   "ready_for_validation": "ready for validation", "validated": "validated"},
+        "crit": {"clarity": "Clarity", "relevance": "Relevance",
+                 "feasibility": "Feasibility", "falsifiability": "Falsifiability"},
+        "strapline": "It doesn't invent literature. It doesn't decide for you.",
+        "intro_line": "Turn a rough idea into a defensible research question. The agent critiques. You decide.",
+        "workspace": "Your workspace",
+        "your_questions": "Your questions",
+        "new_q": "New question", "first_q": "Submit your first question",
+        "q_label": "Research question",
+        "q_help": "Write it as you have it today. It doesn't need to be perfect — that's what the critique is for.",
+        "q_placeholder": "Write your research question here (a draft is fine)",
+        "critique_lang": "Critique language",
+        "submit_btn": "Submit for critique",
+        "state": "Status", "inquiry": "Inquiry type", "validated_by": "Validated by",
+        "history": "Version history",
+        "history_help": "Every version of your question is preserved with its change note — the log of how your reasoning evolved.",
+        "current": "(current)", "author": "Author",
+        "critique_h": "Latest critique from A-02",
+        "critique_help": "Four criteria with severity (ok / minor / major). Implicit assumptions: what your question takes for granted. Missing information: what the agent would need and you haven't stated — add it by writing it into your next revision. Revision suggestions: concrete actions for the next version. Design-stage notes: method decisions that come later — they never block. Declared uncertainty: what the agent honestly cannot judge.",
+        "assumptions": "Implicit assumptions", "missing": "Missing information (formulation stage)",
+        "prompts_h": "Revision suggestions", "opnotes": "Design-stage notes (non-blocking)",
+        "uncertainty": "Declared uncertainty",
+        "locked_notice": "This question is <strong>validated and locked</strong>. Unlocking will be a deliberate act in a future version of the system.",
+        "next_h": "What's next?",
+        "next_body": "With a defensible question, the next step is the evidence map: what is known, what isn't, and where your gap lies. That is exactly where AffectSense's <strong>Advanced Workshop</strong> (September) begins.",
+        "revise_h": "Submit a revision",
+        "revise_help": "Rewrite your question incorporating what you take from the critique. The change note (what changed and why) is your scientific provenance.",
+        "new_version_ph": "New version of your question",
+        "change_note_ph": "Change note: what you changed and why (scientific provenance)",
+        "revise_btn": "Submit revision for critique",
+        "validate_h": "Validate and lock",
+        "validate_help": "When is it ready? When the status reads <strong>“ready for validation”</strong> (no major findings) — or earlier if you so decide. The authority is yours, and your decision note is recorded.",
+        "validate_warn": "A-02 recommended revising. You may validate anyway: the decision is yours and will be recorded.",
+        "decision_ph": "Decision note (why you are validating)",
+        "validate_btn": "Validate as the researcher",
+        "back": "← New question",
+        "busy_title": "The agent is analysing your question…",
+        "busy_body": "This takes 10–30 seconds. Your request has been received — don't close the page.",
+        "footer": "Powered by Gemini 2.5 Flash (Vertex AI) · Temperature 0.2 · Every run is audited (prompt version, tokens, cost)",
+        "process": "The process: <strong>1)</strong> write your question (a draft is perfect), <strong>2)</strong> the agent evaluates it on four criteria and flags assumptions, missing information and suggestions, <strong>3)</strong> revise as many times as you like (every version is preserved), and <strong>4)</strong> when you decide, validate it.",
+        "version_s": "version(s)",
+    },
 }
-CRIT_ES = {
-    "clarity": "Claridad",
-    "relevance": "Relevancia",
-    "feasibility": "Factibilidad",
-    "falsifiability": "Falsabilidad",
-}
+
+
+def pick_lang(lang: str = "") -> str:
+    return "en" if lang == "en" else "es"
 
 
 def resolve_actor(k: str = "") -> tuple[str, str]:
@@ -181,8 +263,9 @@ def resolve_actor(k: str = "") -> tuple[str, str]:
 
 
 @app.get("/ui", response_class=HTMLResponse)
-def ui_index(request: Request, k: str = ""):
+def ui_index(request: Request, k: str = "", lang: str = ""):
     _researcher_id, project_id = resolve_actor(k)
+    L = pick_lang(lang)
     questions = []
     try:
         from src.services.firestore_repository import FirestoreRepository
@@ -208,7 +291,7 @@ def ui_index(request: Request, k: str = ""):
                 {
                     "id": d.id,
                     "text_preview": text[:110] + ("…" if len(text) > 110 else ""),
-                    "status_es": STATUS_ES.get(q.get("status"), q.get("status")),
+                    "status_es": UI_STR[L]["status"].get(q.get("status"), q.get("status")),
                     "n_versions": len(versions),
                     "updated_at": str(q.get("updated_at", "")),
                 }
@@ -216,11 +299,11 @@ def ui_index(request: Request, k: str = ""):
         questions.sort(key=lambda x: x["updated_at"], reverse=True)
     except Exception:
         log.exception("question list failed; rendering without it")
-    return templates.TemplateResponse(request, "index.html", {"k": k, "questions": questions})
+    return templates.TemplateResponse(request, "index.html", {"k": k, "questions": questions, "t": UI_STR[L], "lang": L})
 
 
 @app.post("/ui/questions")
-def ui_submit(k: str = "", text: str = Form(...), language: str = Form(...)):
+def ui_submit(k: str = "", lang: str = "", text: str = Form(...), language: str = Form(...)):
     researcher_id, project_id = resolve_actor(k)
     from src.application import rq_lifecycle as lifecycle
     from src.services.firestore_repository import FirestoreRepository
@@ -235,12 +318,14 @@ def ui_submit(k: str = "", text: str = Form(...), language: str = Form(...)):
         text=text.strip(), language=language, researcher_id=researcher_id,
         project_id=project_id, change_note=None,
     )
-    return RedirectResponse(url=f"/ui/questions/{result['question_id']}?k={k}", status_code=303)
+    L = pick_lang(lang)
+    return RedirectResponse(url=f"/ui/questions/{result['question_id']}?k={k}&lang={L}", status_code=303)
 
 
 @app.get("/ui/questions/{question_id}", response_class=HTMLResponse)
-def ui_question(request: Request, question_id: str, k: str = ""):
+def ui_question(request: Request, question_id: str, k: str = "", lang: str = ""):
     resolve_actor(k)
+    L = pick_lang(lang)
     from src.application import rq_lifecycle as lifecycle
 
     try:
@@ -257,14 +342,15 @@ def ui_question(request: Request, question_id: str, k: str = ""):
         {
             "k": k, "q": q, "c": q.get("latest_critique"),
             "current_text": current_text,
-            "status_es": STATUS_ES.get(q["status"], q["status"]),
-            "crit_es": CRIT_ES,
+            "status_es": UI_STR[L]["status"].get(q["status"], q["status"]),
+            "crit_es": UI_STR[L]["crit"],
+            "t": UI_STR[L], "lang": L,
         },
     )
 
 
 @app.post("/ui/questions/{question_id}/revise")
-def ui_revise(question_id: str, k: str = "", text: str = Form(...), change_note: str = Form(...)):
+def ui_revise(question_id: str, k: str = "", lang: str = "", text: str = Form(...), change_note: str = Form(...)):
     researcher_id, _ = resolve_actor(k)
     from src.application import rq_lifecycle as lifecycle
 
@@ -275,11 +361,11 @@ def ui_revise(question_id: str, k: str = "", text: str = Form(...), change_note:
         )
     except SystemExit as exc:
         raise HTTPException(status_code=409, detail=str(exc))
-    return RedirectResponse(url=f"/ui/questions/{question_id}?k={k}", status_code=303)
+    return RedirectResponse(url=f"/ui/questions/{question_id}?k={k}&lang={pick_lang(lang)}", status_code=303)
 
 
 @app.post("/ui/questions/{question_id}/validate")
-def ui_validate(question_id: str, k: str = "", decision_note: str = Form(...)):
+def ui_validate(question_id: str, k: str = "", lang: str = "", decision_note: str = Form(...)):
     researcher_id, _ = resolve_actor(k)
     from src.application import rq_lifecycle as lifecycle
 
@@ -289,7 +375,7 @@ def ui_validate(question_id: str, k: str = "", decision_note: str = Form(...)):
         )
     except SystemExit as exc:
         raise HTTPException(status_code=409, detail=str(exc))
-    return RedirectResponse(url=f"/ui/questions/{question_id}?k={k}", status_code=303)
+    return RedirectResponse(url=f"/ui/questions/{question_id}?k={k}&lang={pick_lang(lang)}", status_code=303)
 
 
 # ---------------------------------------------------------------------------

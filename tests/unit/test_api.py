@@ -86,3 +86,18 @@ def test_webhook_ignores_other_event_types(monkeypatch):
 def test_welcome_without_session_renders_waiting_page():
     r = client.get("/welcome")
     assert r.status_code == 200 and "Preparando tu acceso" in r.text
+
+
+def test_ui_english_chrome(monkeypatch):
+    monkeypatch.setenv("API_KEY", "k")
+    r = client.get("/ui?k=k&lang=en")
+    assert r.status_code == 200
+    assert "Your workspace" in r.text and "Powered by Gemini 2.5 Flash" in r.text
+    assert "invent literature" in r.text
+
+
+def test_ui_spanish_default_unchanged(monkeypatch):
+    monkeypatch.setenv("API_KEY", "k")
+    r = client.get("/ui?k=k")
+    assert r.status_code == 200
+    assert "Tu espacio de trabajo" in r.text and "No inventa literatura" in r.text
