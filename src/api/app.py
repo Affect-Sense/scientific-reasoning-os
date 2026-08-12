@@ -144,6 +144,8 @@ UI_STR = {
                    "ready_for_validation": "lista para validar", "validated": "validada"},
         "crit": {"clarity": "Claridad", "relevance": "Relevancia",
                  "feasibility": "Factibilidad", "falsifiability": "Falsabilidad"},
+        "sev": {"ok": "ok", "minor": "menor", "major": "mayor", "blocking": "bloqueante"},
+        "lang_toggle": "English",
         "strapline": "No inventa literatura. No decide por ti.",
         "intro_line": "Convierte una idea en bruto en una pregunta de investigación defendible. El agente critica. Tú decides.",
         "workspace": "Tu espacio de trabajo",
@@ -191,6 +193,8 @@ UI_STR = {
                    "ready_for_validation": "ready for validation", "validated": "validated"},
         "crit": {"clarity": "Clarity", "relevance": "Relevance",
                  "feasibility": "Feasibility", "falsifiability": "Falsifiability"},
+        "sev": {"ok": "ok", "minor": "minor", "major": "major", "blocking": "blocking"},
+        "lang_toggle": "Español",
         "strapline": "It doesn't invent literature. It doesn't decide for you.",
         "intro_line": "Turn a rough idea into a defensible research question. The agent critiques. You decide.",
         "workspace": "Your workspace",
@@ -315,7 +319,7 @@ def ui_index(request: Request, k: str = "", lang: str = ""):
         questions.sort(key=lambda x: x["updated_at"], reverse=True)
     except Exception:
         log.exception("question list failed; rendering without it")
-    return templates.TemplateResponse(request, "index.html", {"k": k, "questions": questions, "t": UI_STR[L], "lang": L})
+    return templates.TemplateResponse(request, "index.html", {"k": k, "questions": questions, "t": UI_STR[L], "lang": L, "other_lang": ("es" if L == "en" else "en")})
 
 
 def _agent_busy_page(t: dict, action: str, text: str, extra_fields: str = "", language: str = "es") -> HTMLResponse:
@@ -388,7 +392,8 @@ def ui_question(request: Request, question_id: str, k: str = "", lang: str = "")
             "current_text": current_text,
             "status_es": UI_STR[L]["status"].get(q["status"], q["status"]),
             "crit_es": UI_STR[L]["crit"],
-            "t": UI_STR[L], "lang": L,
+            "sev_map": UI_STR[L]["sev"],
+            "t": UI_STR[L], "lang": L, "other_lang": ("es" if L == "en" else "en"),
         },
     )
 

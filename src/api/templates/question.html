@@ -22,7 +22,7 @@
 <p class="help">{{ t.critique_help | safe }}</p>
 <div class="card">
   {% for f in c.findings %}
-  <p><span class="sev sev-{{ f.severity }}">{{ f.severity }}</span>
+  <p><span class="sev sev-{{ f.severity }}">{{ sev_map.get(f.severity, f.severity) }}</span>
      <strong>{{ crit_es.get(f.criterion, f.criterion) }}</strong><br>{{ f.assessment }}</p>
   {% endfor %}
 

@@ -50,6 +50,9 @@
   <header style="display:flex;align-items:baseline;gap:.7rem;border-bottom:2px solid var(--accent);padding-bottom:.6rem;margin-bottom:1.1rem;">
     <span style="font-weight:800;font-size:1.25rem;color:var(--accent);letter-spacing:.01em;">AffectSense</span>
     <span class="brand">Scientific Reasoning OS</span> <span class="beta">BETA</span>
+    <span style="margin-left:auto;font-size:.85rem;">
+      <a href="?k={{ k }}&lang={{ other_lang }}" style="color:var(--accent);text-decoration:none;">🌐 {{ t.lang_toggle }}</a>
+    </span>
   </header>
   <p class="muted" style="margin-top:-0.6rem"><em>{{ t.strapline }}</em></p>
   {% block content %}{% endblock %}
