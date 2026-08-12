@@ -82,7 +82,7 @@
     code (MX$0); first real-revenue test in progress (Wave 1 emails, 10 Aug).
 
 18. Milestone 7 closed 11 Aug on its own definition (traceability): workshop
-    revenue MX$17,507 (10 customers, July 2026, Stripe -> Klar, statements
+    revenue MX$15,300 (10 customers, July 2026, Stripe -> Klar, statements
     exported); SROS beta launched 6 Aug — live-payable rail verified twice,
     9 customers onboarded via the autonomous funnel (promo-comped pilots;
     founders-price offers in market, W1 cohort deliberately held for the
