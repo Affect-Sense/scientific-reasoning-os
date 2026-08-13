@@ -89,3 +89,19 @@
     September W2 launch); AI operating cost US$0.11 for 36 audited runs;
     infra <US$20/month. Every figure exports from Stripe, Klar, GCP Billing,
     or the agent_runs ledger.
+
+19. DEFECT identified 12 Aug: the Stripe webhook provisions an SROS workspace
+    for ANY completed live checkout in the account — it does not filter by
+    product. First occurrence: a W1 workshop registration (MX$900) silently
+    created an SROS customer record and workspace. The buyer experienced only
+    the normal workshop flow (the workshop payment link redirects to its own
+    confirmation page), so the orphaned workspace is server-side only and was
+    never surfaced to him; SROS will be introduced to workshop participants
+    live on 22 Aug, not retroactively by message. Response: (a) the record
+    (cus_bb6d73a680ed, MX$900) is classified as W1 workshop revenue and
+    EXCLUDED from all SROS traction figures in the XPRIZE submission;
+    (b) every new provision is verified against its Stripe line item before
+    entering any count until the fix ships; (c) webhook product filter is the
+    first post-freeze code change. An earlier idea to adopt the behaviour as
+    "bundling policy" was rejected: a bundle requires checkout disclosure and
+    a pricing decision, neither of which existed.
