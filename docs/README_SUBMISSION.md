@@ -20,7 +20,7 @@ question; only the researcher does.
 ## Live system
 
 - **Public service:** https://sros-api-209857552354.us-central1.run.app
-- **Health check:** `GET /health` → `{"status":"ok"}`
+- **Liveness:** the live-demo URL above; the `/health` route recorded in decision 10 was never applied to code (`/healthz` remains, and is intercepted by the Google Frontend on Cloud Run) — corrected post-freeze
 - **Architecture:** FastAPI on Google Cloud Run (us-central1) · Gemini 2.5
   Flash via Vertex AI · Firestore (append-only events + agent-run ledger) ·
   Stripe Checkout (autonomous onboarding).

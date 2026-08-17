@@ -109,3 +109,9 @@
 20. Repository made public 17 Aug 2026 for XPRIZE judging (Devpost "Try it
     out" link). The IP moat (ontology, agent/event catalogues) is not in this
     repository. Revisit visibility after judging concludes.
+
+21. Correction (17 Aug): decision 10's rename to /health was recorded but
+    never applied in code — the route is still /healthz, which the Google
+    Frontend intercepts on Cloud Run. Discovered during submission link
+    checks. Left unchanged under freeze; README corrected; route rename is a
+    one-line post-freeze fix. Liveness for judges = the live demo URL.
