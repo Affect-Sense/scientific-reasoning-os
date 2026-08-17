@@ -105,3 +105,7 @@
     first post-freeze code change. An earlier idea to adopt the behaviour as
     "bundling policy" was rejected: a bundle requires checkout disclosure and
     a pricing decision, neither of which existed.
+
+20. Repository made public 17 Aug 2026 for XPRIZE judging (Devpost "Try it
+    out" link). The IP moat (ontology, agent/event catalogues) is not in this
+    repository. Revisit visibility after judging concludes.
